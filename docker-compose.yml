@@ -1,0 +1,82 @@
+services:
+  # ── Agent Servers ──────────────────────────────────────────────
+  coder:
+    build:
+      context: .
+      args:
+        AGENT_NAME: coder
+    container_name: agent-coder
+    ports:
+      - "4001:4096"
+    volumes:
+      - workspace:/workspace
+    networks:
+      - agent-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4096"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  reviewer:
+    build:
+      context: .
+      args:
+        AGENT_NAME: reviewer
+    container_name: agent-reviewer
+    ports:
+      - "4002:4096"
+    volumes:
+      - workspace:/workspace
+    networks:
+      - agent-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4096"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  researcher:
+    build:
+      context: .
+      args:
+        AGENT_NAME: researcher
+    container_name: agent-researcher
+    ports:
+      - "4003:4096"
+    volumes:
+      - workspace:/workspace
+    networks:
+      - agent-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4096"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── Client ─────────────────────────────────────────────────────
+  client:
+    build: .
+    container_name: agent-client
+    volumes:
+      - workspace:/workspace
+      - ./agents:/agent-config:ro
+    networks:
+      - agent-net
+    depends_on:
+      coder:
+        condition: service_healthy
+      reviewer:
+        condition: service_healthy
+      researcher:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    entrypoint: ["/bin/bash"]
+
+volumes:
+  workspace:
+
+networks:
+  agent-net:
+    driver: bridge
