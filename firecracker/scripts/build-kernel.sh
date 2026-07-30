@@ -14,16 +14,25 @@ docker run --rm \
   ubuntu:22.04 bash -c '
     apt-get update && apt-get install -y \
       build-essential libncurses-dev flex bison libssl-dev \
-      libelf-dev arptables dwarves cpio kmod bc
+      libelf-dev arptables dwarves cpio kmod bc git curl ca-certificates
   
     cd /tmp
-    git clone --depth 1 --branch v5.10.217 https://github.com/torvalds/linux.git
+    git clone --depth 1 --branch v5.10 https://github.com/torvalds/linux.git
     cd linux
     
-    # Download Firecracker recommended config
-    curl -fsSL -o .config "https://raw.githubusercontent.com/firecracker-microvm/firecracker/main/resources/guest_configs/vmlinux-5.10.config" || \
-    curl -fsSL -o .config "https://raw.githubusercontent.com/firecracker-microvm/firecracker/v1.0.0/resources/guest_configs/vmlinux-5.10.config" || \
-    echo "Using default config"
+    # Use defconfig as base
+    make defconfig
+    
+    # Enable required options for Firecracker
+    scripts/config --enable CONFIG_SERIAL_8250
+    scripts/config --enable CONFIG_SERIAL_8250_CONSOLE
+    scripts/config --enable CONFIG_EXT4_FS
+    scripts/config --enable CONFIG_NET
+    scripts/config --enable CONFIG_INET
+    scripts/config --enable CONFIG_DEVTMPFS
+    scripts/config --enable CONFIG_DEVTMPFS_MOUNT
+    
+    make olddefconfig
     
     # Build kernel
     make -j$(nproc) vmlinux 2>&1 | tail -5

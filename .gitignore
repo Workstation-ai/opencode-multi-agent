@@ -1,1 +1,6 @@
 .env
+
+# Build artifacts
+firecracker/kernels/
+firecracker/rootfs/
+/tmp/fc-*
